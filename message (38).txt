@@ -1,0 +1,555 @@
+-- Services -- 
+local ReplicatedStorage = game:GetService('ReplicatedStorage')
+local PlayerService = game:GetService('Players')
+local TweenService = game:GetService('TweenService')
+local UserInputService = game:GetService('UserInputService')
+local RunService = game:GetService('RunService')
+-- Character
+local Player = PlayerService.LocalPlayer
+local Character = Player.Character
+local Humanoid = Character:WaitForChild("Humanoid")
+local Hitbox = Character:WaitForChild('Hitbox')
+
+
+
+
+
+
+-- Extra
+local TweenInformation = TweenInfo.new(.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+
+-- Window Starter
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local Window = Rayfield:CreateWindow({
+	Name = "Summer Walker Cheat",
+	Icon = 0, -- Icon in Topbar. Can use Lucide Icons (string) or Roblox Image (number). 0 to use no icon (default).
+	LoadingTitle = "Roblox Sports - Slotted Cheat",
+	LoadingSubtitle = "",
+	Theme = "Default", -- Check https://docs.sirius.menu/rayfield/configuration/themes
+
+	DisableRayfieldPrompts = false,
+	DisableBuildWarnings = false, -- Prevents Rayfield from warning when the script has a version mismatch with the interface
+
+	ConfigurationSaving = {
+		Enabled = true,
+		FolderName = 'SummerWalkerCheat', -- Create a custom folder for your hub/game
+		FileName = "SummerWalkerCheatSettings"
+	},
+
+	Discord = {
+		Enabled = false, -- Prompt the user to join your Discord server if their executor supports it
+		Invite = "noinvitelink", -- The Discord invite code, do not include discord.gg/. E.g. discord.gg/ ABCD would be ABCD
+		RememberJoins = true -- Set this to false to make them join the discord every time they load it up
+	},
+
+	KeySystem = false, -- Set this to true to use our key system
+	KeySettings = {
+		Title = "Untitled",
+		Subtitle = "Key System",
+		Note = "No method of obtaining the key is provided", -- Use this to tell the user how to get a key
+		FileName = "Key", -- It is recommended to use something unique as other scripts using Rayfield may overwrite your key file
+		SaveKey = true, -- The user's key will be saved, but if you change the key, they will be unable to use your script
+		GrabKeyFromSite = false, -- If this is true, set Key below to the RAW site you would like Rayfield to get the key from
+		Key = {"Hello"} -- List of keys that will be accepted by the system, can be RAW file links (pastebin, github etc) or simple strings ("hello","key22")
+	}
+})
+
+
+-- Globals 
+getgenv().Magnet = false
+getgenv().MagnetColor = Color3.fromRGB(255, 255, 255)
+getgenv().MagnetSize = 0
+getgenv().MagnetTransparency = 1
+--
+getgenv().AutoCatch = false
+getgenv().AutoCatchDistance = 1.5
+--
+getgenv().AccelerationFactor = 0
+getgenv().JumpPowerFactor = 0
+--
+getgenv().AutoTuck = false
+getgenv().AutoTuckDelay = 0.1
+--
+
+--
+getgenv().NotificationsEnabled = false
+getgenv().NotificationDuration = 3
+
+-- Variables
+getgenv().Catching = false 
+
+
+-- Functions
+local function updateMagnetSphere(ball)
+	local sphere = ball:FindFirstChild("MagnetSphere")
+	if not sphere then
+		sphere = Instance.new("Part")
+		sphere.Name = "MagnetSphere"
+		sphere.Shape = Enum.PartType.Ball
+		sphere.Material = Enum.Material.ForceField
+		sphere.Color = getgenv().MagnetColor
+		sphere.Anchored = false
+		sphere.CanCollide = false
+		sphere.Transparency = getgenv().MagnetTransparency
+		sphere.Size = Vector3.new(getgenv().MagnetSize, getgenv().MagnetSize, getgenv().MagnetSize)
+		sphere.Parent = ball
+	end
+
+	sphere.Color = getgenv().MagnetColor
+	sphere.Transparency = getgenv().MagnetTransparency
+	sphere.Size = Vector3.new(getgenv().MagnetSize, getgenv().MagnetSize, getgenv().MagnetSize)
+	sphere.CFrame = ball.CFrame
+end
+
+
+local function Catch(ball: BasePart)
+	if not getgenv().Catching then return end 
+
+	local hitbox = Character:FindFirstChild("HumanoidRootPart")
+	if not hitbox then return end
+
+	local distance = (hitbox.Position - ball.Position).Magnitude
+	if distance > getgenv().MagnetSize then return end
+
+	firetouchinterest(hitbox, ball, 0)
+	task.wait()
+	firetouchinterest(hitbox, ball, 1)
+end
+
+
+-- Tabs
+local MainTab = Window:CreateTab("Main", 96023377452503)
+local FootballTab = Window:CreateTab("Ball", 96023377452503)
+local TrollTab = Window:CreateTab("Troll", 96023377452503)
+local SettingsTab = Window:CreateTab("Settings", 96023377452503)
+
+
+
+
+-- 
+local CharacterSection = MainTab:CreateSection("Character")
+-- Toggles
+local MagnetToggle = MainTab:CreateToggle({
+	Name = "Magnet",
+	CurrentValue = false,
+	Flag = "MagnetToggle",
+	Callback = function(Value)
+		getgenv().Magnet = Value
+	end,
+})
+
+
+local MagnetKeybind = MainTab:CreateKeybind({
+	Name = "Magnet Keybind",
+	CurrentKeybind = "N",
+	HoldToInteract = false,
+	Flag = "MagnetKeybind",
+	Callback = function(Keybind)
+		task.spawn(function()
+			MagnetToggle:Set(not MagnetToggle.CurrentValue)
+		end)
+
+		if getgenv().NotificationsEnabled then
+			Rayfield:Notify({
+				Title = "Magnet",
+				Content = MagnetToggle.CurrentValue and 'Magnet has been enabled' or 'Magnet has been disabled.',
+				Duration = getgenv().NotificationDuration,
+				Image = 4483362458,
+			})
+		end
+	end,
+})
+
+local MagnetColorPicker = MainTab:CreateColorPicker({
+	Name = "Magnet Color",
+	Color = Color3.fromRGB(255,255,255),
+	Flag = "MagnetColor", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+	Callback = function(Value)
+		getgenv().MagnetColor = Value
+	end
+})
+
+local Divider = MainTab:CreateDivider()
+local MagnetSizeSlider = MainTab:CreateSlider({
+	Name = 'Magnet Size',
+	Range = {0, 25},
+	Increment = 1,
+	Suffix = "",
+	CurrentValue = 0,
+	Flag = "MagnetSizeSlider1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+	Callback = function(Value)
+		if getgenv().Magnet then  
+			getgenv().MagnetSize = Value  
+
+			-- { Check 2x } -- Global is true  
+			for _, v in pairs(workspace:GetChildren()) do  
+				if v.Name == 'Football' and getgenv().Magnet then  
+					v.CanCollide = false  
+					updateMagnetSphere(v)  
+				end  
+			end  
+
+			-- { Check 2x } -- Listen for new Football parts  
+			workspace.ChildAdded:Connect(function(v)  
+				if v.Name == "Football"  and getgenv().Magnet then  
+					v.CanCollide = false  
+					updateMagnetSphere(v)  
+				end  
+			end)  
+		end  
+	end,
+})
+
+local MagnetTransparencySlider = MainTab:CreateSlider({
+	Name = 'Magnet Transparency',
+	Range = {0, 1},
+	Increment = 0.1,
+	Suffix = "",
+	CurrentValue = 0,
+	Flag = "MagnetTransparencySlider1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+	Callback = function(Value)
+		getgenv().MagnetTransparency = Value
+		for _,v in pairs (workspace:GetChildren()) do
+			if v.Name == 'Football' and getgenv().Magnet then
+				v:WaitForChild('MagnetSphere').Transparency = getgenv().MagnetTransparency
+			end
+		end
+		workspace.ChildAdded:Connect(function(ballpart)
+			if ballpart.Name == 'Football' and getgenv().Magnet then
+				ballpart:WaitForChild('MagnetSphere').Transparency = getgenv().MagnetTransparency
+			end
+		end)
+	end,
+})
+
+local Divider = MainTab:CreateDivider()
+UserInputService.InputBegan:Connect(function(input, gpe)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		getgenv().Catching = true
+		task.delay(1, function()
+			getgenv().Catching = false
+		end)
+	end
+end)
+
+task.spawn(function()
+	RunService.Heartbeat:Connect(function()
+		for _,v in pairs(workspace:GetChildren()) do
+			if v.Name == "Football" and v:IsA("BasePart") then
+				local sphere = v:FindFirstChild("MagnetSphere")
+				if sphere then
+					Catch(v)
+					sphere.CFrame = v.CFrame
+				end
+			end
+		end
+	end)
+end)
+
+
+
+-------
+
+local HumanoidSection = MainTab:CreateSection("Humanoid")
+local Player = game.Players.LocalPlayer
+local UserInputService = game:GetService("UserInputService") -- For detecting keypresses
+local RunService = game:GetService("RunService")
+
+local accelConnection
+local jumpHeightConnection
+local originalWalkSpeed = 16  -- Default walk speed (adjust as needed)
+local momentumWalkSpeed = originalWalkSpeed  -- Start with the default walk speed
+local originalJumpHeight = 7.8 -- Default jump height (modify as needed)
+local momentumJumpHeight = originalJumpHeight -- Start with the default jump height
+
+-- Apply acceleration factor for walk speed
+local function applyAccelerationFactor(value)
+	getgenv().AccelerationFactor = value
+
+	-- If there's an existing connection, disconnect it
+	if accelConnection then
+		accelConnection:Disconnect()
+		accelConnection = nil
+	end
+
+	local character = Player.Character
+	if not character then return end
+
+	local hum = character:FindFirstChild("Humanoid")
+	if not hum then return end
+
+	-- Update momentum-based walk speed
+	momentumWalkSpeed = originalWalkSpeed + (value * 2)  -- Adjust the multiplier as needed
+
+	-- Continuously update the walk speed based on momentum
+	accelConnection = RunService.Heartbeat:Connect(function()
+		if hum and hum.MoveDirection.Magnitude > 0 then
+			-- Apply the momentum-based walk speed when the player is moving
+			hum.WalkSpeed = momentumWalkSpeed
+		else
+			-- If not moving, reset the walk speed to default
+			hum.WalkSpeed = originalWalkSpeed
+		end
+	end)
+end
+
+-- Apply jump height factor (momentum-based)
+local function applyJumpHeightFactor(value)
+	getgenv().JumpHeightFactor = value
+
+	-- Calculate the new jump height based on the momentum
+	momentumJumpHeight = originalJumpHeight + (value * 2)  -- Adjust the multiplier as needed
+
+	local character = Player.Character
+	if not character then return end
+
+	local hum = character:FindFirstChild("Humanoid")
+	if not hum then return end
+
+	-- Lock the jump height by continuously setting it to the desired value
+	if jumpHeightConnection then
+		jumpHeightConnection:Disconnect() -- Disconnect any previous connections
+	end
+
+	jumpHeightConnection = RunService.Heartbeat:Connect(function()
+		if hum and hum.JumpHeight ~= momentumJumpHeight then
+			hum.JumpHeight = momentumJumpHeight  -- Forcefully set the jump height
+		end
+	end)
+end
+-- Listen for the "E" key press to disable/enable acceleration and jump height
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if gameProcessed then return end  -- Ignore if the game has already processed the input (e.g., in a UI)
+
+	if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == Enum.KeyCode.E then
+		local character = Player.Character
+		if not character then return end
+
+		local hum = character:FindFirstChild("Humanoid")
+		if not hum then return end
+
+		-- Temporarily reset walk speed and jump height when "E" is pressed
+		hum.WalkSpeed = originalWalkSpeed  -- Reset walk speed to default
+		hum.JumpHeight = originalJumpHeight  -- Reset jump height to default
+
+		-- Re-enable after 3 seconds
+		task.delay(3, function()
+			-- Re-apply the walk speed and jump height based on factors
+			if getgenv().WalkSpeedFactor and getgenv().WalkSpeedFactor > 0 then
+				applyWalkSpeedFactor(getgenv().WalkSpeedFactor)
+			end
+			if getgenv().JumpHeightFactor and getgenv().JumpHeightFactor > 0 then
+				applyJumpHeightFactor(getgenv().JumpHeightFactor)
+			end
+		end)
+	end
+end)
+-- Your slider for walk speed adjustment (already covered in previous code)
+local AccelerationSlider = MainTab:CreateSlider({
+	Name = 'Acceleration Factor',
+	Range = {0, 15},
+	Increment = 1,
+	Suffix = "",
+	CurrentValue = 0,
+	Flag = "AccelerationFactorSlider1",
+	Callback = function(value)
+		-- Apply the acceleration factor from the slider
+		applyAccelerationFactor(value)
+	end,
+})
+
+-- Your slider for jump height adjustment
+local JumpHeightSlider = MainTab:CreateSlider({
+	Name = 'JumpHeight Factor',
+	Range = {0, 5},
+	Increment = 0.1,
+	Suffix = "",
+	CurrentValue = 0,
+	Flag = "JumpHeightFactorSlider1",  -- Make sure this flag is unique
+	Callback = function(Value)
+		-- Apply the jump height factor from the slider
+		applyJumpHeightFactor(Value)
+	end,
+})
+
+local AutomationSection = MainTab:CreateSection("Automation")
+local AutoCatchToggle = MainTab:CreateToggle({
+	Name = "Auto Catch",
+	CurrentValue = false,
+	Flag = "AutoCatchToggle1",
+	Callback = function(Value)
+		getgenv().AutoCatch = Value
+	end,
+})
+
+local AutoCatchSlider = MainTab:CreateSlider({
+	Name = 'Auto Catch Distance',
+	Range = {0, 20},
+	Increment = 0.1,
+	Suffix = "",
+	CurrentValue = 0,
+	Flag = "AutoCatchDistanceSlider",  -- Make sure this flag is unique
+	Callback = function(Value)
+		getgenv().AutoCatchDistance = Value
+	end,
+})
+
+-- Check if the football is within catch range
+local function checkFootballDistance()
+	local player = game.Players.LocalPlayer
+	local character = player.Character
+	local football = workspace:FindFirstChild("Football") -- Assuming the football is a part in the workspace
+
+	-- If no football is found, return early
+	if not football then
+		return
+	end
+
+	-- If no character or HumanoidRootPart, return early
+	if not character then return end
+	local hrp = character:FindFirstChild("HumanoidRootPart")
+	if not hrp then return end
+
+	-- Calculate the distance
+	local distance = (hrp.Position - football.Position).Magnitude
+
+	-- Check if auto catch is enabled and football is within range
+	if getgenv().AutoCatch and distance <= getgenv().AutoCatchDistance then
+		local hitboxevent = game:GetService("ReplicatedStorage").Remotes.Hitbox["Events/Functions"].Event
+		hitboxevent:FireServer('Catch')  -- Fire the catch event
+	end
+end
+
+-- Continuously check the distance
+game:GetService("RunService").Heartbeat:Connect(function()
+	checkFootballDistance()
+end)
+
+-------
+
+local MainSection = FootballTab:CreateSection("Main")
+local TuckToggle = FootballTab:CreateToggle({
+	Name = "Auto Tuck",
+	CurrentValue = false,
+	Flag = "AutoTuckToggle",
+	Callback = function(Value)
+		getgenv().AutoTuck = Value
+
+
+		if not Value then
+			return -- If AutoTuck is disabled, do nothing
+		end
+
+		local Remotes = ReplicatedStorage.Remotes
+		local Football = Remotes:FindFirstChild('Football')
+
+		Character.ChildAdded:Connect(function(ballPart)
+			if getgenv().AutoTuck and ballPart.Name == "Football" then
+				task.wait(getgenv().AutoTuckDelay)
+				Football['Events/Functions'].Event:FireServer('Tuck')
+			end
+		end)
+	end,
+})
+
+
+local AutoTuckKeybind = FootballTab:CreateKeybind({
+	Name = "Auto Tuck Keybind",
+	CurrentKeybind = "G",
+	HoldToInteract = false,
+	Flag = "AutoTuckKeybind",
+	Callback = function(Keybind)
+		task.spawn(function()
+			TuckToggle:Set(not TuckToggle.CurrentValue)
+		end)
+
+
+
+		if getgenv().NotificationsEnabled then
+			Rayfield:Notify({
+				Title = "Auto Tuck",
+				Content = TuckToggle.CurrentValue and 'Auto Tuck has been enabled' or 'Auto Tuck has been disabled.',
+				Duration = getgenv().NotificationDuration,
+				Image = 4483362458,
+			})
+		end
+	end,
+})
+local Divider = FootballTab:CreateDivider()
+local AutoTuckDelaySlider = FootballTab:CreateSlider({
+	Name = 'Auto Tuck Delay',
+	Range = {0, 1},
+	Increment = 0.1,
+	Suffix = "",
+	CurrentValue = 0,
+	Flag = "AutoTuckDelaySlider1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+	Callback = function(Value)
+		getgenv().AutoTuckDelay = Value
+	end,
+})
+
+-------
+
+local InterfaceSettings = SettingsTab:CreateSection("Interface")
+local NotificationsToggle = SettingsTab:CreateToggle({
+	Name = "Keybind Notifications",
+	CurrentValue = false,
+	Flag = "KeybindsNotificationToggle",
+	Callback = function(Value)
+		getgenv().NotificationsEnabled = Value
+	end,
+})
+
+local NotificationsSlider = SettingsTab:CreateSlider({
+	Name = 'Notification Duration',
+	Range = {0, 5},
+	Increment = 1,
+	Suffix = "",
+	CurrentValue = 0,
+	Flag = "NotificationDurationSlider1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+	Callback = function(Value)
+		getgenv().NotificationDuration = Value
+	end,
+})
+local GameplaySettings = SettingsTab:CreateSection("Gameplay")
+local AutoAwarenessButton = SettingsTab:CreateButton({
+	Name = "Max Awareness",
+	Callback = function()
+		local Players = game:GetService("Players")
+		local RepStorage = game:GetService("ReplicatedStorage")
+
+		local localPlayer = Players.LocalPlayer
+		local userId = tostring(localPlayer.UserId) -- Convert to string to match folder name
+		local PlayerDataStorage = RepStorage.PlayerDataStorage:FindFirstChild(userId)
+
+		if PlayerDataStorage then
+			-- Attributes
+			for _, attribute in pairs(PlayerDataStorage.Attributes:GetChildren()) do
+				if attribute:IsA("IntValue") then
+					attribute.Value = 99
+				end
+			end
+
+			-- RealAttributes
+			for _, attribute in pairs(PlayerDataStorage.RealAttributes:GetChildren()) do
+				if attribute:IsA("IntValue") then
+					attribute.Value = 99
+				end
+			end
+
+			-- CustomizedAttributes
+			for _, attribute in pairs(PlayerDataStorage.Build.CustomizedAttributes:GetChildren()) do
+				if attribute:IsA("IntValue") then
+					attribute.Value = 99
+				end
+			end
+		else
+			return
+		end
+
+	end,
+})
+
+
+------
+Rayfield:LoadConfiguration()
